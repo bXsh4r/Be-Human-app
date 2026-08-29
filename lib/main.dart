@@ -33,7 +33,9 @@ class MainApp extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context) => NewActivityPage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NewActivityPage()));
           },
           backgroundColor: const Color.fromARGB(255, 174, 175, 220),
           foregroundColor: const Color.fromARGB(255, 34, 34, 45),
