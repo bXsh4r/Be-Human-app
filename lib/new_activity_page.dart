@@ -1,20 +1,28 @@
+import 'package:be_human/main.dart';
 import 'package:flutter/material.dart';
 
 class NewActivityPage extends StatefulWidget {
-  const NewActivityPage({super.key});
+  const NewActivityPage({
+    super.key,
+    required this.selectedDayIndex
+  });
+
+  final int selectedDayIndex;
 
   @override
   State<NewActivityPage> createState() => _NewActivityPageState();
 }
 
+
 class _NewActivityPageState extends State<NewActivityPage>{
 
   final TextEditingController _activityController = TextEditingController();
-  
+   
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
 
   Future<void> pickTime() async {
+    
     final start = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now()
@@ -34,16 +42,13 @@ class _NewActivityPageState extends State<NewActivityPage>{
       _endTime = end;
     });
   }
-
-  void printA(){
-    print(_activityController.text);
-    _activityController.clear();
-  }
   
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: const Color.fromARGB(255, 125, 139, 174),
+
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 89, 95, 156),
         title: Align(
@@ -56,6 +61,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
           ),
         ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
         child: Column(      
@@ -110,8 +116,22 @@ class _NewActivityPageState extends State<NewActivityPage>{
           ],
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
-        onPressed: printA,
+        onPressed: () {
+          Activity activity = Activity(
+            activityDesc: _activityController.text,
+            startTime: _startTime,
+            endTime: _endTime,
+            day: widget.selectedDayIndex
+          );
+
+          ActivityUtil.addToDayList(activity);
+
+          Navigator.pop(
+            context, 
+          );
+        },
         backgroundColor: const Color.fromARGB(255, 174, 175, 220),
         foregroundColor: const Color.fromARGB(255, 34, 34, 45),
         child: Icon(Icons.done),

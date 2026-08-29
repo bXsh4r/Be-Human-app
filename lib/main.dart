@@ -9,13 +9,24 @@ void main() {
   );
 }
 
-class MainApp extends StatelessWidget {
+
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+
+class _MainAppState extends State<MainApp> {
+  int _selectedDayIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
         backgroundColor: const Color.fromARGB(255, 125, 139, 174),
+
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 89, 95, 156),
           title: Align(
@@ -28,15 +39,29 @@ class MainApp extends StatelessWidget {
             ),
           ),
         ),
-        body: Center(
-          child: ActivityPage()
+        
+        body: ActivityPage(
+          selectedDayIndex: _selectedDayIndex,
+          onDayChanged: (index) {
+            setState(() {
+              _selectedDayIndex = index;
+            });
+          }
         ),
+
         floatingActionButton: FloatingActionButton(
-          onPressed: (){
-            Navigator.push(
+          onPressed: () async{
+            await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => NewActivityPage()));
+              MaterialPageRoute(
+                builder: (context) => NewActivityPage(
+                  selectedDayIndex: _selectedDayIndex,
+                )
+              )
+            );
+            setState(() {});
           },
+      
           backgroundColor: const Color.fromARGB(255, 174, 175, 220),
           foregroundColor: const Color.fromARGB(255, 34, 34, 45),
           child: Icon(Icons.add),
@@ -44,6 +69,8 @@ class MainApp extends StatelessWidget {
     );
   }
 }
+
+
 class DayBox extends StatelessWidget {
   const DayBox({
     super.key,
@@ -59,7 +86,9 @@ class DayBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(  
+
       onTap: onTap,
+
       child: Container(  
         padding: EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
@@ -89,6 +118,7 @@ class DayBox extends StatelessWidget {
     );
   }
 }
+
 
 class ActivityBox extends StatelessWidget {
   const ActivityBox({
@@ -132,61 +162,66 @@ class ActivityBox extends StatelessWidget {
 }
 
 
+class Activity{
+  Activity({
+    required this.activityDesc,
+    required this.startTime,
+    required this.endTime,
+    required this.day
+  });
 
-class ActivityPage extends StatefulWidget {
-  const ActivityPage({super.key});
+  final String activityDesc;
+  final TimeOfDay? startTime;
+  final TimeOfDay? endTime;
+  final int day;
+}
+
+
+class ActivityUtil{
+  
+  static final List<List<Activity>> activityList = [
+    [],[],[],[],[],[],[]
+  ];
+
+  static void addToDayList(Activity activity){
+    activityList[activity.day].add(activity);
+  }
+}
+
+
+class ActivityPage extends StatefulWidget{
+  ActivityPage({
+    super.key,
+    required this.selectedDayIndex,
+    required this.onDayChanged,
+  });
+
+  final int selectedDayIndex;
+  final ValueChanged<int> onDayChanged;
 
   @override
   State<ActivityPage> createState() => _ActivityPageState();
 }
 
-class _ActivityPageState extends State<ActivityPage> {
-  int _selectedDayIndex = 0;
-  final List<String> _days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+class _ActivityPageState extends State<ActivityPage>{
 
-  // TEMP ////////////////////
-  final List<String> dayActivities = [
-    'Morning run in the park',
-    'Checking emails and reviewing priority tasks',
-    'Team standup and status update',
-    'Focused software development session',
-    'Deep-dive code review',
-    'Client strategy call',
-    'Quick mid-day walk and lunch',
-    'Architecture planning session',
-    'Debugging and testing bug fixes',
-    'Updating documentation and task tracking',
-    'Technical discussion with team lead',
-    'Daily Wrap-up and planning for tomorrow',
-    'Dinner and winding down',
-    'Reading or personal learning'
+
+  final List<String> _days = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'
   ];
-  ////////////////////////////
-  
-    // TEMP ////////////////////
-  final List<String> dayPeriod = [
-    '08:00 AM - 08:30 AM',
-    '08:30 AM - 09:00 AM',
-    '09:00 AM - 09:30 AM',
-    '09:30 AM - 10:30 AM',
-    '10:30 AM - 11:30 AM',
-    '11:30 AM - 12:30 PM',
-    '12:30 PM - 01:30 PM',
-    '01:30 PM - 02:30 PM',
-    '02:30 PM - 03:30 PM',
-    '03:30 PM - 04:15 PM',
-    '04:15 PM - 05:00 PM',
-    '05:00 PM - 05:30 PM',
-    '06:30 PM - 07:30 PM',
-    '08:00 PM - 09:00 PM'
-  ];
-  ////////////////////////////
-  
 
   @override
   Widget build(BuildContext context) {
     return Column(
+
       children: [
+
         SizedBox(
           height: 40,
           child: ListView(
@@ -195,26 +230,29 @@ class _ActivityPageState extends State<ActivityPage> {
               for(int i=0; i<_days.length; i++)
                 DayBox(
                   day: _days[i],
-                  isSelected: i == _selectedDayIndex,
+                  isSelected: i == widget.selectedDayIndex,
                   onTap: () {
-                    setState(() {
-                      _selectedDayIndex = i;
-                    });
+                    widget.onDayChanged(i);
                   },
-               )
+                )
             ],
           )
         ),
+
         SizedBox(height: 16),
+
         Expanded(
           child: ListView(
             scrollDirection: Axis.vertical,
             children: [
-              for(int i=0; i<dayActivities.length; i++)
-                ActivityBox(title: dayActivities[i], period: dayPeriod[i],)
+              for(int i=0; i<ActivityUtil.activityList[widget.selectedDayIndex].length; i++)
+                ActivityBox(
+                  title: ActivityUtil.activityList[widget.selectedDayIndex][i].activityDesc,
+                  period: '${ActivityUtil.activityList[widget.selectedDayIndex][i].startTime!.format(context).toString()} - ${ActivityUtil.activityList[widget.selectedDayIndex][i].endTime!.format(context).toString()}',
+                ),
             ],
           )
-        ),       
+        ),
       ]
     );
   }
