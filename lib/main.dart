@@ -56,6 +56,7 @@ class _MainAppState extends State<MainApp> {
               MaterialPageRoute(
                 builder: (context) => NewActivityPage(
                   selectedDayIndex: _selectedDayIndex,
+                  mode: ActivityMode.add,
                 )
               )
             );
@@ -85,6 +86,7 @@ class DayBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return GestureDetector(  
 
       onTap: onTap,
@@ -134,11 +136,12 @@ class ActivityBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(10),
+      width: double.infinity,
       decoration: BoxDecoration(
         border: Border.all(
           color: Colors.blueGrey,
           strokeAlign: BorderSide.strokeAlignCenter
-        )
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,11 +189,15 @@ class ActivityUtil{
   static void addToDayList(Activity activity){
     activityList[activity.day].add(activity);
   }
+  
+  static void editActivity(Activity activity){
+    activityList[activity.day][0] = activity;
+  }
 }
 
 
 class ActivityPage extends StatefulWidget{
-  ActivityPage({
+  const ActivityPage({
     super.key,
     required this.selectedDayIndex,
     required this.onDayChanged,
@@ -246,10 +253,60 @@ class _ActivityPageState extends State<ActivityPage>{
             scrollDirection: Axis.vertical,
             children: [
               for(int i=0; i<ActivityUtil.activityList[widget.selectedDayIndex].length; i++)
-                ActivityBox(
-                  title: ActivityUtil.activityList[widget.selectedDayIndex][i].activityDesc,
-                  period: '${ActivityUtil.activityList[widget.selectedDayIndex][i].startTime!.format(context).toString()} - ${ActivityUtil.activityList[widget.selectedDayIndex][i].endTime!.format(context).toString()}',
-                ),
+                Dismissible(
+
+                  key: ValueKey(
+                    ActivityUtil.activityList[widget.selectedDayIndex][i] // MAKE IT HAVE ITS OWN UNIQUE ID LATER WHEN YOU MAKE A DATABASE
+                  ),
+
+                  confirmDismiss: (direction) async{
+                    if(direction == DismissDirection.startToEnd){
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NewActivityPage(
+                            selectedDayIndex: widget.selectedDayIndex,
+                            mode: ActivityMode.edit,
+                            currentActivity: ActivityUtil.activityList[widget.selectedDayIndex][i].activityDesc,
+                            currentStartTime: ActivityUtil.activityList[widget.selectedDayIndex][i].startTime,
+                            currentEndTime: ActivityUtil.activityList[widget.selectedDayIndex][i].endTime,
+                          )
+                        )
+                      );
+                      setState(() {});
+                      return false;
+                    }
+                    
+                    if(direction == DismissDirection.endToStart){
+                      return true;
+                    }
+                  },
+
+                  onDismissed: (direction) {
+                    setState(() {
+                      ActivityUtil.activityList[widget.selectedDayIndex].removeAt(i);
+                    });
+                  },
+
+                  background: Container(
+                    color: Colors.green,
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.only(left: 20),
+                    child: Icon(Icons.edit),
+                  ),
+
+                  secondaryBackground: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.delete),
+                  ),
+
+                  child: ActivityBox(
+                    title: ActivityUtil.activityList[widget.selectedDayIndex][i].activityDesc,
+                    period: '${ActivityUtil.activityList[widget.selectedDayIndex][i].startTime!.format(context).toString()} - ${ActivityUtil.activityList[widget.selectedDayIndex][i].endTime!.format(context).toString()}',
+                  ),
+                )
             ],
           )
         ),

@@ -1,13 +1,28 @@
 import 'package:be_human/main.dart';
 import 'package:flutter/material.dart';
 
+enum ActivityMode {
+  add,
+  edit
+}
+
 class NewActivityPage extends StatefulWidget {
+
+  final ActivityMode mode;
+
   const NewActivityPage({
     super.key,
-    required this.selectedDayIndex
+    required this.selectedDayIndex,
+    required this.mode,
+    this.currentActivity,
+    this.currentStartTime,
+    this.currentEndTime
   });
 
   final int selectedDayIndex;
+  final String? currentActivity;
+  final TimeOfDay? currentStartTime;
+  final TimeOfDay? currentEndTime;
 
   @override
   State<NewActivityPage> createState() => _NewActivityPageState();
@@ -16,7 +31,7 @@ class NewActivityPage extends StatefulWidget {
 
 class _NewActivityPageState extends State<NewActivityPage>{
 
-  final TextEditingController _activityController = TextEditingController();
+  TextEditingController _activityController = TextEditingController();
    
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
@@ -45,6 +60,15 @@ class _NewActivityPageState extends State<NewActivityPage>{
   
   @override
   Widget build(BuildContext context) {
+
+    final ActivityMode mode = widget.mode;
+
+    if(mode == ActivityMode.edit && _startTime == null && _endTime == null){
+      _activityController = (TextEditingController(text: widget.currentActivity));
+      _startTime = widget.currentStartTime;
+      _endTime = widget.currentEndTime;
+    }
+
     return Scaffold(
 
       backgroundColor: const Color.fromARGB(255, 125, 139, 174),
@@ -54,7 +78,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
         title: Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'Add New Activity',
+            mode == ActivityMode.add ? 'Add New Activity' : 'Edit Activity',
             style: TextStyle(
               color: const Color.fromARGB(255, 34, 34, 45)
             ),
@@ -80,6 +104,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
               maxLength: 100,
               cursorColor: const Color.fromARGB(255, 60, 64, 113),
               decoration: InputDecoration(
+                hintText: mode == ActivityMode.add ? 'E.g: Go for a walk...' : widget.currentActivity,
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(
@@ -126,7 +151,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
             day: widget.selectedDayIndex
           );
 
-          ActivityUtil.addToDayList(activity);
+          mode == ActivityMode.add ? ActivityUtil.addToDayList(activity) : ActivityUtil.editActivity(activity);
 
           Navigator.pop(
             context, 
