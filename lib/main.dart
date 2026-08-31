@@ -14,11 +14,13 @@ class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
   @override
-  State<MainApp> createState() => _MainAppState();
+  State<MainApp> createState() => _MainAppState();  // "=> _MainAppState" means "return _MainAppState"
 }
 
 
 class _MainAppState extends State<MainApp> {
+  
+  // _selectedDayIndex is here because we will eventually want to pass it to new_activity_page through the FAB in  MainApps's state
   int _selectedDayIndex = 0;
 
   @override
@@ -41,14 +43,15 @@ class _MainAppState extends State<MainApp> {
         ),
         
         body: ActivityPage(
-          selectedDayIndex: _selectedDayIndex,
-          onDayChanged: (index) {
-            setState(() {
+          selectedDayIndex: _selectedDayIndex, 
+          onDayChanged: (index) { // an index will be assigned to onDayChanged on ActivityPage which will be called back and assigned to _selectedDayIndex
+            setState(() {         // the state (everything inside build) will be rebuilt to show the new change
               _selectedDayIndex = index;
             });
           }
         ),
 
+        // FAB is here async because we need to wait for the navigator to pop and return the data for us to then set the state
         floatingActionButton: FloatingActionButton(
           onPressed: () async{
             await Navigator.push(
@@ -71,7 +74,7 @@ class _MainAppState extends State<MainApp> {
   }
 }
 
-
+// DayBox is responsible for the days list UI
 class DayBox extends StatelessWidget {
   const DayBox({
     super.key,
@@ -87,6 +90,7 @@ class DayBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     
+    // GestureDetector because each day box can be tapped
     return GestureDetector(  
 
       onTap: onTap,
@@ -121,7 +125,7 @@ class DayBox extends StatelessWidget {
   }
 }
 
-
+// ActivityBox is responsible for the activities list UI
 class ActivityBox extends StatelessWidget {
   const ActivityBox({
     super.key,
@@ -182,6 +186,7 @@ class Activity{
 
 class ActivityUtil{
   
+  // a 2d list for days and their activities
   static final List<List<Activity>> activityList = [
     [],[],[],[],[],[],[]
   ];
@@ -191,7 +196,7 @@ class ActivityUtil{
   }
   
   static void editActivity(Activity activity){
-    activityList[activity.day][0] = activity;
+    activityList[activity.day][0] = activity; // 0 SHOULD BE REPLACED WITH ID LATER
   }
 }
 
@@ -204,7 +209,7 @@ class ActivityPage extends StatefulWidget{
   });
 
   final int selectedDayIndex;
-  final ValueChanged<int> onDayChanged;
+  final ValueChanged<int> onDayChanged; // pass value from ActivityPage (child) to MainApp (parent)
 
   @override
   State<ActivityPage> createState() => _ActivityPageState();
@@ -237,9 +242,9 @@ class _ActivityPageState extends State<ActivityPage>{
               for(int i=0; i<_days.length; i++)
                 DayBox(
                   day: _days[i],
-                  isSelected: i == widget.selectedDayIndex,
+                  isSelected: i == widget.selectedDayIndex, 
                   onTap: () {
-                    widget.onDayChanged(i);
+                    widget.onDayChanged(i);  // when a daybox is tapped pass i to parent
                   },
                 )
             ],
@@ -253,12 +258,16 @@ class _ActivityPageState extends State<ActivityPage>{
             scrollDirection: Axis.vertical,
             children: [
               for(int i=0; i<ActivityUtil.activityList[widget.selectedDayIndex].length; i++)
+
+                // Dismissible for dragging left or right to delete or edit
                 Dismissible(
 
+                  // use the provided data to make a key
                   key: ValueKey(
                     ActivityUtil.activityList[widget.selectedDayIndex][i] // MAKE IT HAVE ITS OWN UNIQUE ID LATER WHEN YOU MAKE A DATABASE
                   ),
 
+                  // async because we need to wait for the navigator to pop then set state
                   confirmDismiss: (direction) async{
                     if(direction == DismissDirection.startToEnd){
                       await Navigator.push(
@@ -274,14 +283,17 @@ class _ActivityPageState extends State<ActivityPage>{
                         )
                       );
                       setState(() {});
-                      return false;
+                      return false; // returning false because we dont want to dismiss the activity
                     }
                     
                     if(direction == DismissDirection.endToStart){
-                      return true;
+                      return true; // return true to dismiss the activity
                     }
+
+                    return false;
                   },
 
+                  // if dismissed remove the activity from the screen and from the activityList
                   onDismissed: (direction) {
                     setState(() {
                       ActivityUtil.activityList[widget.selectedDayIndex].removeAt(i);

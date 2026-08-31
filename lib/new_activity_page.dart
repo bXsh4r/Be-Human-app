@@ -36,18 +36,19 @@ class _NewActivityPageState extends State<NewActivityPage>{
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
 
+  // Future<void> means that an operation is async and returns no data
   Future<void> pickTime() async {
     
     final start = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now()
+      initialTime: _startTime == null ? TimeOfDay(hour: 00, minute: 00) : _startTime!
     );
 
     if(start == null) return;
 
     final end = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now()
+      initialTime: TimeOfDay(hour: 00, minute: 00)
     );
 
     if(end == null) return;
@@ -144,18 +145,28 @@ class _NewActivityPageState extends State<NewActivityPage>{
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Activity activity = Activity(
-            activityDesc: _activityController.text,
-            startTime: _startTime,
-            endTime: _endTime,
-            day: widget.selectedDayIndex
-          );
+          if(_activityController.text.isEmpty || _startTime == null || _endTime == null){
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Empty Field(s)', style: TextStyle(color: const Color.fromARGB(255, 109, 52, 48))),
+                backgroundColor: const Color.fromARGB(255, 71, 71, 121),
+                duration: Duration(milliseconds: 1500),
+              )
+            );
+          }else{
+            Activity activity = Activity(
+              activityDesc: _activityController.text,
+              startTime: _startTime,
+              endTime: _endTime,
+              day: widget.selectedDayIndex
+            );
 
-          mode == ActivityMode.add ? ActivityUtil.addToDayList(activity) : ActivityUtil.editActivity(activity);
+            mode == ActivityMode.add ? ActivityUtil.addToDayList(activity) : ActivityUtil.editActivity(activity);
 
-          Navigator.pop(
-            context, 
-          );
+            Navigator.pop(
+              context, 
+            );
+          }
         },
         backgroundColor: const Color.fromARGB(255, 174, 175, 220),
         foregroundColor: const Color.fromARGB(255, 34, 34, 45),
