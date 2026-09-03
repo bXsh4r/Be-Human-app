@@ -1,3 +1,4 @@
+import 'package:be_human/client.dart';
 import 'package:be_human/main.dart';
 import 'package:flutter/material.dart';
 
@@ -31,6 +32,8 @@ class NewActivityPage extends StatefulWidget {
 
 class _NewActivityPageState extends State<NewActivityPage>{
 
+  Client client = Client();
+
   TextEditingController _activityController = TextEditingController();
    
   TimeOfDay? _startTime;
@@ -62,9 +65,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
   @override
   Widget build(BuildContext context) {
 
-    final ActivityMode mode = widget.mode;
-
-    if(mode == ActivityMode.edit && _startTime == null && _endTime == null){
+    if(widget.mode == ActivityMode.edit && _startTime == null && _endTime == null){
       _activityController = (TextEditingController(text: widget.currentActivity));
       _startTime = widget.currentStartTime;
       _endTime = widget.currentEndTime;
@@ -79,7 +80,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
         title: Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            mode == ActivityMode.add ? 'Add New Activity' : 'Edit Activity',
+            widget.mode == ActivityMode.add ? 'Add New Activity' : 'Edit Activity',
             style: TextStyle(
               color: const Color.fromARGB(255, 34, 34, 45)
             ),
@@ -105,7 +106,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
               maxLength: 100,
               cursorColor: const Color.fromARGB(255, 60, 64, 113),
               decoration: InputDecoration(
-                hintText: mode == ActivityMode.add ? 'E.g: Go for a walk...' : widget.currentActivity,
+                hintText: widget.mode == ActivityMode.add ? 'E.g: Go for a walk...' : widget.currentActivity,
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(
@@ -144,7 +145,7 @@ class _NewActivityPageState extends State<NewActivityPage>{
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           if(_activityController.text.isEmpty || _startTime == null || _endTime == null){
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -161,7 +162,12 @@ class _NewActivityPageState extends State<NewActivityPage>{
               day: widget.selectedDayIndex
             );
 
-            mode == ActivityMode.add ? ActivityUtil.addToDayList(activity) : ActivityUtil.editActivity(activity);
+            String? id = await client.postActivity(activity);   
+
+            activity = ActivityUtil.copyWith(activity, id);  
+
+           // widget.mode == ActivityMode.add ? ActivityUtil.addToDayList(activity) : ActivityUtil.editActivity(activity);
+            ActivityUtil.addToDayList(activity); // TODO: DELETE THIS LINE WHEN U FIX THE ABOVE LINE
 
             Navigator.pop(
               context, 

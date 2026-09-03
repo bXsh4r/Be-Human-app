@@ -1,3 +1,4 @@
+import 'package:be_human/client.dart';
 import 'package:be_human/new_activity_page.dart';
 import 'package:flutter/material.dart';
 
@@ -44,7 +45,7 @@ class _MainAppState extends State<MainApp> {
         
         body: ActivityPage(
           selectedDayIndex: _selectedDayIndex, 
-          onDayChanged: (index) { // an index will be assigned to onDayChanged on ActivityPage which will be called back and assigned to _selectedDayIndex
+          onDayChanged: (index) { // an index from ActivityPage will be called back and assigned to _selectedDayIndex
             setState(() {         // the state (everything inside build) will be rebuilt to show the new change
               _selectedDayIndex = index;
             });
@@ -85,7 +86,7 @@ class DayBox extends StatelessWidget {
 
   final String day;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback onTap; // callback without a value returned
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +130,11 @@ class DayBox extends StatelessWidget {
 class ActivityBox extends StatelessWidget {
   const ActivityBox({
     super.key,
-    required this.title,
+    required this.activityDesc,
     required this.period
   });
 
-  final String title;
+  final String activityDesc;
   final String period;
 
   @override
@@ -151,7 +152,7 @@ class ActivityBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            activityDesc,
             style: TextStyle(
               fontSize: 17
             ),
@@ -171,12 +172,14 @@ class ActivityBox extends StatelessWidget {
 
 class Activity{
   Activity({
+    this.id,
     required this.activityDesc,
     required this.startTime,
     required this.endTime,
     required this.day
   });
 
+  final String? id;
   final String activityDesc;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
@@ -187,17 +190,26 @@ class Activity{
 class ActivityUtil{
   
   // a 2d list for days and their activities
-  static final List<List<Activity>> activityList = [
-    [],[],[],[],[],[],[]
-  ];
+  static final List<Activity> activityList = [];
+
+  static Activity copyWith(Activity activity, String? id){
+    return Activity(
+      id: id,
+      activityDesc: activity.activityDesc,
+      startTime: activity.startTime,
+      endTime: activity.endTime,
+      day: activity.day
+    );
+  }
 
   static void addToDayList(Activity activity){
-    activityList[activity.day].add(activity);
+    activityList.add(activity);
   }
   
-  static void editActivity(Activity activity){
-    activityList[activity.day][0] = activity; // 0 SHOULD BE REPLACED WITH ID LATER
-  }
+  // TODO: ADD A METHOD TO SERVER FOR UPDATING THE DATABASE
+  /*static void editActivity(Activity activity, String id){
+    activityList = activity; 
+  }*/
 }
 
 
@@ -217,6 +229,7 @@ class ActivityPage extends StatefulWidget{
 
 class _ActivityPageState extends State<ActivityPage>{
 
+  Client client = Client();
 
   final List<String> _days = [
     'Sunday',
@@ -228,10 +241,31 @@ class _ActivityPageState extends State<ActivityPage>{
     'Saturday'
   ];
 
+  void addActivitiesToList(int day) async{
+    List<Activity> newList = await client.getAllActivities(day);
+
+    // despite MainApp already setting the state each time a user taps.
+    // we still need to set state here because the app isn't gonna wait for await to finsish (only its function will wait).
+    // thats why we set the state again after await finishes.
+    setState((){
+      ActivityUtil.activityList.clear();
+      ActivityUtil.activityList.addAll(newList);
+    });
+
+    print(widget.selectedDayIndex);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    addActivitiesToList(widget.selectedDayIndex);
+  }
+
   @override
   Widget build(BuildContext context) {
+    
     return Column(
-
+      
       children: [
 
         SizedBox(
@@ -239,12 +273,15 @@ class _ActivityPageState extends State<ActivityPage>{
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
+              
               for(int i=0; i<_days.length; i++)
+              
                 DayBox(
                   day: _days[i],
                   isSelected: i == widget.selectedDayIndex, 
                   onTap: () {
                     widget.onDayChanged(i);  // when a daybox is tapped pass i to parent
+                    addActivitiesToList(i);
                   },
                 )
             ],
@@ -257,14 +294,15 @@ class _ActivityPageState extends State<ActivityPage>{
           child: ListView(
             scrollDirection: Axis.vertical,
             children: [
-              for(int i=0; i<ActivityUtil.activityList[widget.selectedDayIndex].length; i++)
-
+              
+              for(int i=0; i<ActivityUtil.activityList.length; i++)
+                
                 // Dismissible for dragging left or right to delete or edit
                 Dismissible(
 
                   // use the provided data to make a key
                   key: ValueKey(
-                    ActivityUtil.activityList[widget.selectedDayIndex][i] // MAKE IT HAVE ITS OWN UNIQUE ID LATER WHEN YOU MAKE A DATABASE
+                    ActivityUtil.activityList[i].id
                   ),
 
                   // async because we need to wait for the navigator to pop then set state
@@ -276,9 +314,9 @@ class _ActivityPageState extends State<ActivityPage>{
                           builder: (context) => NewActivityPage(
                             selectedDayIndex: widget.selectedDayIndex,
                             mode: ActivityMode.edit,
-                            currentActivity: ActivityUtil.activityList[widget.selectedDayIndex][i].activityDesc,
-                            currentStartTime: ActivityUtil.activityList[widget.selectedDayIndex][i].startTime,
-                            currentEndTime: ActivityUtil.activityList[widget.selectedDayIndex][i].endTime,
+                            currentActivity: ActivityUtil.activityList[i].activityDesc,
+                            currentStartTime: ActivityUtil.activityList[i].startTime,
+                            currentEndTime: ActivityUtil.activityList[i].endTime,
                           )
                         )
                       );
@@ -296,7 +334,7 @@ class _ActivityPageState extends State<ActivityPage>{
                   // if dismissed remove the activity from the screen and from the activityList
                   onDismissed: (direction) {
                     setState(() {
-                      ActivityUtil.activityList[widget.selectedDayIndex].removeAt(i);
+                      ActivityUtil.activityList.removeAt(i); // TODO: REMOVE FROM THE DATABASE ASWELL
                     });
                   },
 
@@ -315,8 +353,9 @@ class _ActivityPageState extends State<ActivityPage>{
                   ),
 
                   child: ActivityBox(
-                    title: ActivityUtil.activityList[widget.selectedDayIndex][i].activityDesc,
-                    period: '${ActivityUtil.activityList[widget.selectedDayIndex][i].startTime!.format(context).toString()} - ${ActivityUtil.activityList[widget.selectedDayIndex][i].endTime!.format(context).toString()}',
+                    activityDesc: ActivityUtil.activityList[i].activityDesc,
+                    period: '${ActivityUtil.activityList[i].startTime!.format(context).toString()}'
+                            ' - ${ActivityUtil.activityList[i].endTime!.format(context).toString()}',
                   ),
                 )
             ],
