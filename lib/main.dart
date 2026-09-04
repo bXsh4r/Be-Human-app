@@ -206,10 +206,11 @@ class ActivityUtil{
     activityList.add(activity);
   }
   
-  // TODO: ADD A METHOD TO SERVER FOR UPDATING THE DATABASE
-  /*static void editActivity(Activity activity, String id){
-    activityList = activity; 
-  }*/
+
+  static void editActivity(Activity activity, String? id) async {    
+    int oldActivityIndex = activityList.indexWhere((oldActivity) => oldActivity.id == id); 
+    activityList[oldActivityIndex] = activity;
+  }
 }
 
 
@@ -251,8 +252,6 @@ class _ActivityPageState extends State<ActivityPage>{
       ActivityUtil.activityList.clear();
       ActivityUtil.activityList.addAll(newList);
     });
-
-    print(widget.selectedDayIndex);
   }
 
   @override
@@ -314,6 +313,7 @@ class _ActivityPageState extends State<ActivityPage>{
                           builder: (context) => NewActivityPage(
                             selectedDayIndex: widget.selectedDayIndex,
                             mode: ActivityMode.edit,
+                            id: ActivityUtil.activityList[i].id,
                             currentActivity: ActivityUtil.activityList[i].activityDesc,
                             currentStartTime: ActivityUtil.activityList[i].startTime,
                             currentEndTime: ActivityUtil.activityList[i].endTime,
@@ -332,10 +332,12 @@ class _ActivityPageState extends State<ActivityPage>{
                   },
 
                   // if dismissed remove the activity from the screen and from the activityList
-                  onDismissed: (direction) {
-                    setState(() {
-                      ActivityUtil.activityList.removeAt(i); // TODO: REMOVE FROM THE DATABASE ASWELL
-                    });
+                  onDismissed: (direction) async {
+                      await client.deleteActivity(ActivityUtil.activityList[i].id);
+
+                        setState(() {
+                          ActivityUtil.activityList.removeAt(i);
+                        });
                   },
 
                   background: Container(

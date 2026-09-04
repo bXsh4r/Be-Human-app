@@ -15,12 +15,14 @@ class NewActivityPage extends StatefulWidget {
     super.key,
     required this.selectedDayIndex,
     required this.mode,
+    this.id,
     this.currentActivity,
     this.currentStartTime,
     this.currentEndTime
   });
-
+  
   final int selectedDayIndex;
+  final String? id;
   final String? currentActivity;
   final TimeOfDay? currentStartTime;
   final TimeOfDay? currentEndTime;
@@ -162,12 +164,18 @@ class _NewActivityPageState extends State<NewActivityPage>{
               day: widget.selectedDayIndex
             );
 
-            String? id = await client.postActivity(activity);   
+            if(widget.mode == ActivityMode.add){
+              String? id = await client.postActivity(activity);   
 
-            activity = ActivityUtil.copyWith(activity, id);  
+              activity = ActivityUtil.copyWith(activity, id);  
 
-           // widget.mode == ActivityMode.add ? ActivityUtil.addToDayList(activity) : ActivityUtil.editActivity(activity);
-            ActivityUtil.addToDayList(activity); // TODO: DELETE THIS LINE WHEN U FIX THE ABOVE LINE
+              ActivityUtil.addToDayList(activity);
+            }
+            else{
+              await client.updateActivity(widget.id, activity);
+              ActivityUtil.editActivity(activity, widget.id);
+            }
+          
 
             Navigator.pop(
               context, 

@@ -78,4 +78,39 @@ class Client {
     }
     return activities;
   }
+
+  Future<bool> updateActivity(String? id, Activity newActivity) async{
+    final response = await put(
+      uri.replace(queryParameters: {'id': id}),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'activityDesc': newActivity.activityDesc,
+        'startTime': {
+          'hour': newActivity.startTime!.hour,
+          'minute': newActivity.startTime!.minute
+        },
+        'endTime': {
+          'hour': newActivity.endTime!.hour,
+          'minute': newActivity.endTime!.minute          
+        },
+        'day': newActivity.day
+      })
+    );
+
+    if(response.statusCode == 204){
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> deleteActivity(String? id) async{
+    final response = await delete(
+      uri.replace(queryParameters: {'id': id})
+    );
+
+    if(response.statusCode == 204){
+      return true;
+    }
+    return false;
+  }
 }
