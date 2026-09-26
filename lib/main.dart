@@ -1,5 +1,6 @@
 import 'package:be_human/client.dart';
 import 'package:be_human/new_activity_page.dart';
+import 'package:be_human/timer_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -55,6 +56,8 @@ class _MainAppState extends State<MainApp> {
         // FAB is here async because we need to wait for the navigator to pop and return the data for us to then set the state
         floatingActionButton: FloatingActionButton(
           onPressed: () async{
+            // TODO: Use Navigator 2.0 instead https://www.youtube.com/watch?v=g8xGxd99Fgs
+            // also take the time to learn how to use Navigator.pushNamed
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -267,8 +270,31 @@ class _ActivityPageState extends State<ActivityPage>{
       
       children: [
 
+        // TEMP //////////////////////////////
+        ElevatedButton (
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TimerPage(
+                  startTime: TimeOfDay(hour: 3, minute: 30),
+                  endTime: TimeOfDay(hour: 3, minute: 35)
+                )
+              )
+            );
+          },
+          child: Text(
+            'GO TO TIMER'
+          )
+        ),
+        // TEMP //////////////////////////////
+
+
         SizedBox(
           height: 40,
+
+          // TODO: add builder to the ListView so it becomes more effiecient by introducing lazy loading 
+          // and also automatically gives the index of each item in your list
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
